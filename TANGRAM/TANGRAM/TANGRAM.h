@@ -59,7 +59,7 @@ int Crypt_Dec_Block_CBC(unsigned char *input, int in_len, unsigned char *output,
 	// key_len  密钥比特长度
 }
 
-int Key_Schedule(unsigned char *Seedkey, int Keylen, unsigned char Direction, unsigned char *Subkey)
+void Key_Schedule(unsigned char *Seedkey, int Keylen, unsigned char Direction, unsigned char *Subkey)
 //根据初始密钥产生各轮子密钥
 {
 	//Seedkey     密钥
