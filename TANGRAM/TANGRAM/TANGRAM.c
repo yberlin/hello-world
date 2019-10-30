@@ -61,10 +61,16 @@ void Key_Schedule(unsigned char *Seedkey, int Keylen, unsigned char Direction, u
 			row_2[2] = ((row_1[2] << 17) | row_1[2] & 0xFFFF8000 >> 15) ^ row_1[3];
 			//round constant
 			row_2[0] = row_2[0] ^ RC44[r];
-		}
-		for (i = 0; i < 4; i++)
-		{
-
+			//128 key schedule
+			//Subkey[0]--Subkey[3]->row_2[0]
+			//Subkey[4]--Subkey[7]->row_2[1]
+			for (i = 0; i < 4; i++)
+			{	
+				for (int j = 0; j < 4; j++) {
+					Subkey[16 * r + i + j] = (row_2[i] & (0xFF000000 >> (j * 8))) >> ((3-j) * 8);
+				}
+					
+			}
 		}
 	}
 	else if (Keylen == 256)
@@ -74,4 +80,6 @@ void Key_Schedule(unsigned char *Seedkey, int Keylen, unsigned char Direction, u
 	else
 		printf("keylen is wrong");
 }
-void TANGRAM_128_128(unsigned char *input, int in_len, unsigned char *output, int *out_len, unsigned char *key, int key_len)
+void TANGRAM_128_128(unsigned char *input, int in_len, unsigned char *output, int *out_len, unsigned char *key, int key_len) {
+
+}
