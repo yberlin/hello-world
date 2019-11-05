@@ -6,12 +6,10 @@ void AddRoundKey(uint32_t* input, uint32_t* sk, uint32_t* a) {
 	{
 		a[i] = input[i]^ sk[i];
 	}
-	
-
 }
 
 void SubCloumn(uint32_t *a, uint32_t *b) {
-	uint32_t t[11];
+	uint32_t t[12];
 	t[1] = a[0] ^ a[2];
 	t[2] = a[0] & a[1];
 	t[3] = a[3] ^ t[2];
@@ -43,8 +41,11 @@ void Key_Schedule(unsigned char *Seedkey, int Keylen, unsigned char Direction, u
 	{
 		for ( i = 0; i < 4; i++)
 		{
-			row[4] = 0;
+			row[i] = 0;
 		}
+		//the first round subkey = seedkey
+		for (i = 0; i < 16; i++)
+			Subkey[i] = Seedkey[i];
 		//8bit to 32bit
 		for ( i = 0; i < 4; i++)
 		{
@@ -52,8 +53,8 @@ void Key_Schedule(unsigned char *Seedkey, int Keylen, unsigned char Direction, u
 		}
 		for ( r = 0; r < 44; r++)
 		{
-			//ShiftRow
-			ShiftRow(row, row_1);
+			//SubCloumn
+			SubCloumn(row, row_1);
 			//Feistel
 			row_2[3] = row_1[0];
 			row_2[0] = ((row_1[0] << 7) | row_1[0] & 0xFE000000 >> 25) ^ row_1[1];
@@ -67,19 +68,80 @@ void Key_Schedule(unsigned char *Seedkey, int Keylen, unsigned char Direction, u
 			for (i = 0; i < 4; i++)
 			{	
 				for (int j = 0; j < 4; j++) {
-					Subkey[16 * r + i + j] = (row_2[i] & (0xFF000000 >> (j * 8))) >> ((3-j) * 8);
-				}
-					
+					Subkey[16 * (r + 1) + i + j] = (row_2[i] & (0xFF000000 >> (j * 8))) >> ((3-j) * 8);
+				}				
+			}
+			//assign row_2 to row
+			for (i = 0; i < 4; i++)
+			{
+				row[i] = row_2[i];
 			}
 		}
 	}
-	else if (Keylen == 256)
+	/*else if (Keylen == 256)
 	{
 
 	}
-	else
-		printf("keylen is wrong");
+	else*/
+		//printf("keylen is wrong");
 }
-void TANGRAM_128_128(unsigned char *input, int in_len, unsigned char *output, int *out_len, unsigned char *key, int key_len) {
 
+void TANGRAM_128_128(unsigned char *input, int in_len, unsigned char *output, int out_len, unsigned char *key, int key_len) {
+	uint32_t state[4],state_s[4],key_32[4];
+	unsigned char subkey[16 * 45];
+	int i, j;
+	for (i = 0; i < 4; i++)
+	{
+		state[i] = 0;
+		key_32[i] = 0;
+	}
+	for (i = 0; i < 4; i++)
+	{
+		state[i] = state[i] | input[i * 4 + 3] | (input[i * 4 + 2] << 8) | (input[i * 4 + 1] << 16) | (input[i * 4 + 0] << 24);
+	}
+	//test printf
+	printf("input:\n");
+	for (i = 0; i < 4; i++)
+	{
+		printf("%x", state[i]);
+		printf("\n");
+	}
+	//produce subkey
+	Key_Schedule(key, 128, 0, subkey);
+	//test printf
+	printf("subkey:\n");
+	for ( i = 0; i < 45; i++)
+	{
+		printf("round:%d\n", i);
+		for (j = 0; j < 4; j++)
+		{
+			for (int n = 0; n < 4; n++)
+			{
+				printf("%2x ", subkey[i*16 + j*4 + n]);
+			}
+			printf("\n");
+		}
+	}
+	//round function
+	for (i = 0; i < 44; i++)
+	{
+		for(j=0;j<4;j++)
+			key_32[j] = key_32[j] | subkey[i * 16 + j * 4 + 3] | (subkey[i * 16 + j * 4 + 2] << 8) | (subkey[i * 16 + j * 4 + 1] << 16) | (subkey[i * 16 + j * 4 + 0] << 24);
+		AddRoundKey(state, key_32, state);
+		SubCloumn(state, state_s);
+		ShiftRow(state_s, state);
+	}
+	//final add round 
+	for (j = 0; j < 4; j++)
+		key_32[j] = key_32[j] | subkey[44 * 16 + j * 4 + 3] | (subkey[44 * 16 + j * 4 + 2] << 8) | (subkey[44 * 16 + j * 4 + 1] << 16) | (subkey[44 * 16 + j * 4 + 0] << 24);
+	AddRoundKey(state, key_32, state);
+	//trans state(32bit) to output(8bit)
+	for (i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++) {
+			output[ i*4 + j] = (state[i] & (0xFF000000 >> (j * 8))) >> ((3 - j) * 8);
+		}
+
+	}
 }
+
