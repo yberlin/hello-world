@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#define BLOCK_SIZE 128
 
 void Key_Schedule(unsigned char *Seedkey, int Keylen, unsigned char Direction, unsigned char *Subkey);
 static unsigned char SBOX[] = {
@@ -35,5 +36,13 @@ static unsigned char RC82[] = {
 	0x68, 0x50, 0x21, 0x43, 0x07, 0x0E, 0x1C, 0x38, 0x71, 0x62, 0x44, 0x09, 0x12,
 	0x24, 0x49, 0x13, 0x26, 0x4D, 0x1B, 0x36, 0x6D, 0x5A, 0x35, 0x6B, 0x56, 0x2D,
 	0x5B, 0x37, 0x6F, 0x5E}; 
-void TANGRAM_128_128_enc(unsigned char *input, int in_len, unsigned char *output, int out_len, unsigned char *key, int key_len);
-void TANGRAM_128_128_dec(unsigned char *input, int in_len, unsigned char *output, int out_len, unsigned char *key, int key_len);
+void TANGRAM_128_128_enc_Block(unsigned char *input, int in_len, unsigned char *output, unsigned char *key, int key_len);
+void TANGRAM_128_128_dec_Block(unsigned char *input, int in_len, unsigned char *output,  unsigned char *key, int key_len);
+void TANGRAM_128_128_enc_Round(unsigned char *input, int in_len, unsigned char *output, unsigned char *key, int key_len, int cryptoround);
+void TANGRAM_128_128_enc_Block_CBC(unsigned char *input, int in_len, unsigned char *output, unsigned char *key, int key_len, unsigned char *iv);
+void TANGRAM_128_128_dec_Block_CBC(unsigned char *input, int in_len, unsigned char *output, unsigned char *key, int key_len, unsigned char *iv);
+int Crypt_Enc_Block(unsigned char *input, int in_len, unsigned char *output, int *out_len, unsigned char *key, int key_len);
+int Crypt_Enc_Block_Round(unsigned char *input, int in_len, unsigned char *output, int *out_len, unsigned char *key, int key_len, int CryptRound);
+int Crypt_Dec_Block(unsigned char *input, int in_len, unsigned char *output, int *out_len, unsigned char *key, int key_len);
+int Crypt_Enc_Block_CBC(unsigned char *input, int in_len, unsigned char *output, int *out_len, unsigned char *key, int key_len);
+int Crypt_Dec_Block_CBC(unsigned char *input, int in_len, unsigned char *output, int *out_len, unsigned char *key, int key_len);
