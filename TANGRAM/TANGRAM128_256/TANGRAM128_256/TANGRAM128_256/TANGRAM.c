@@ -4,7 +4,7 @@
 int Crypt_Enc_Block(unsigned char *input, int in_len, unsigned char *output, int *out_len, unsigned char *key, int key_len)
 //ECB模式加密
 {	
-		TANGRAM_128_128_enc_Block(input, in_len, output, key, key_len);
+		TANGRAM_128_256_enc_Block(input, in_len, output, key, key_len);
 	
 		*out_len = in_len;
 		return 0;
@@ -12,13 +12,13 @@ int Crypt_Enc_Block(unsigned char *input, int in_len, unsigned char *output, int
 int Crypt_Dec_Block(unsigned char *input, int in_len, unsigned char *output, int *out_len, unsigned char *key, int key_len)
 //ECB模式解密
 {
-	TANGRAM_128_128_dec_Block(input, in_len, output, key, key_len);
+	TANGRAM_128_256_dec_Block(input, in_len, output, key, key_len);
 	*out_len = in_len;
 	return 0;
 }
 int Crypt_Enc_Block_Round(unsigned char *input, int in_len, unsigned char *output, int *out_len, unsigned char *key, int key_len, int CryptRound)
 {
-	TANGRAM_128_128_enc_Round(input, in_len, output, key, key_len, CryptRound);
+	TANGRAM_128_256_enc_Round(input, in_len, output, key, key_len, CryptRound);
 	*out_len = in_len;
 	return 0;
 }
@@ -26,7 +26,7 @@ int Crypt_Enc_Block_Round(unsigned char *input, int in_len, unsigned char *outpu
 int Crypt_Enc_Block_CBC(unsigned char *input, int in_len, unsigned char *output, int *out_len, unsigned char *key, int key_len) {
 	unsigned char iv[16] = { 0x00 };
 	
-	TANGRAM_128_128_enc_Block_CBC(input, in_len, output, key, key_len, iv);
+	TANGRAM_128_256_enc_Block_CBC(input, in_len, output, key, key_len, iv);
 	*out_len = in_len;
 	return 0;
 }
@@ -34,7 +34,7 @@ int Crypt_Dec_Block_CBC(unsigned char *input, int in_len, unsigned char *output,
 {
 	unsigned char iv[16] = { 0x00 };
 
-	TANGRAM_128_128_dec_Block_CBC(input, in_len, output, key, key_len, iv);
+	TANGRAM_128_256_dec_Block_CBC(input, in_len, output, key, key_len, iv);
 	*out_len = in_len;
 	return 0;
 }
@@ -142,56 +142,80 @@ void Key_Schedule(unsigned char *Seedkey, int Keylen, unsigned char Direction, u
 	}
 	else if (Keylen == 256)
 	{
-		uint32_t key_128_256[49][4] = {0x00};
-		//the first round subkey = seedkey
-		for (i = 0; i < 8; i++)
+		uint32_t key_128_256[51][4] = {0x00};
+		//the first round subkey = last 16 seedkey 
+		for (i = 0; i < 4; i++)
 			for (j = 0; j < 4; j++)
-				Subkey[i * 4 + j] = Seedkey[i * 4 + 3 - j];
+				Subkey[i * 4 + j] = Seedkey[16 + i * 4 + 3 - j];
+		//the second round subkey = forst 16 seedkey 
+		for (i = 0; i < 4; i++)
+			for (j = 0; j < 4; j++)
+				Subkey[16 + i * 4 + j] = Seedkey[ i * 4 + 3 - j];
 		for (i = 0; i < 4; i++) {
-			key_128_256[0][i] = Subkey[i * 4] | (Subkey[i * 4 + 1] << 8) | (Subkey[i * 4 + 2] << 16) | (Subkey[i * 4 + 3] << 24);
-			key_128_256[1][i] = Subkey[i * 4+16] | (Subkey[i * 4 + 1+16] << 8) | (Subkey[i * 4 + 2+16] << 16) | (Subkey[i * 4 + 3+16] << 24);
-		}
-			
-		
-		for (r = 0; r < 49; r++)
+			//kleft is the last 16 byte key
+			key_128_256[1][i] = Seedkey[i * 4] | (Seedkey[i * 4 + 1] << 8) | (Seedkey[i * 4 + 2] << 16) | (Seedkey[i * 4 + 3] << 24);
+			key_128_256[0][i] = Seedkey[i * 4+16] | (Seedkey[i * 4 + 1+16] << 8) | (Seedkey[i * 4 + 2+16] << 16) | (Seedkey[i * 4 + 3+16] << 24);
+		};
+		//print test 
+		/*printf("round 0 key \n");
+		for (i = 0; i < 4; i++)
 		{
+			
+			printf("%x \n", key_128_256[0][i]);
+		};
+		printf("round 1 key \n");
+		for (i = 0; i < 4; i++)
+		{
+			
+			printf("%x \n", key_128_256[1][i]);
+		};*/
+		for (r = 2; r < 51; r++)
+		{
+			for (i = 0; i < 4; i++)
+				row[i] = key_128_256[r - 1][i];
 			//SubCloumn
-			SubCloumn(key_128_256[r+2], key_128_256[r+2]);
+			SubCloumn(row, row_1);
 			//Feistel
 			row_2[3] = row_1[0];
 			row_2[0] = ((row_1[0] << 7) | (row_1[0] & 0xFE000000) >> 25) ^ row_1[1];
 			row_2[1] = row_1[2];
 			row_2[2] = ((row_1[2] << 17) | (row_1[2] & 0xFFFF8000) >> 15) ^ row_1[3];
 			//round constant
-			row_2[0] = row_2[0] ^ RC44[r];
-			//128 key schedule
-			//Subkey[0]--Subkey[3]->row_2[0]
-			//Subkey[4]--Subkey[7]->row_2[1]
+			row_2[0] = row_2[0] ^ RC49[r-2];
+			//k(r+2)=k(r) xor update(k(r+1))
+			for (i = 0; i < 4; i++)
+				key_128_256[r][i] = key_128_256[r - 2][i] ^ row_2[i];
+			//128-256 key schedule
+			//Subkey[16*2]--Subkey[16*2+3]->key_128_256[2][0]
+			//Subkey[16*2+4]--Subkey[16*2+7]->key_128_256[2][1]
+			//printf("round %d subkey\n", r);
 			for (i = 0; i < 4; i++)
 			{
 				for (j = 0; j < 4; j++) {
-					Subkey[16 * (r + 1) + i * 4 + j] = (row_2[i] & (0xFF000000 >> (j * 8))) >> ((3 - j) * 8);
+					Subkey[16 * r  + i * 4 + j] = (key_128_256[r][i] & (0xFF000000 >> (j * 8))) >> ((3 - j) * 8);
+					//printf("%x ", Subkey[16 * r + i * 4 + j]);
 				}
+				//printf("\n");
 			}
 			//assign row_2 to row
-			for (i = 0; i < 4; i++)
+			/*for (i = 0; i < 4; i++)
 			{
 				row[i] = row_2[i];
-			}
+			}*/
 		}
 	}
 	else
 		printf("keylen is wrong");
 }
 
-void TANGRAM_128_128_enc_Block(unsigned char *input, int in_len, unsigned char *output, unsigned char *key, int key_len) {
+void TANGRAM_128_256_enc_Block(unsigned char *input, int in_len, unsigned char *output, unsigned char *key, int key_len) {
 	//ECB
 	uint32_t state[4],state_s[4],key_32[4];
-	unsigned char subkey[16 * 45];
+	unsigned char subkey[16 * 51];
 	int block_cnt = in_len / BLOCK_SIZE;
 	int i, j;
 	//produce subkey
-	Key_Schedule(key, 128, 0, subkey);
+	Key_Schedule(key, key_len, 0, subkey);
 	//block enc
 	for (int b = 0; b < block_cnt; b++)
 	{
@@ -206,7 +230,7 @@ void TANGRAM_128_128_enc_Block(unsigned char *input, int in_len, unsigned char *
 		}
 		
 		//round function
-		for (i = 0; i < 44; i++)
+		for (i = 0; i < 50; i++)
 		{
 			for (j = 0; j < 4; j++)
 				key_32[j] = subkey[i * 16 + j * 4 + 3] | (subkey[i * 16 + j * 4 + 2] << 8) | (subkey[i * 16 + j * 4 + 1] << 16) | (subkey[i * 16 + j * 4 + 0] << 24);
@@ -220,7 +244,7 @@ void TANGRAM_128_128_enc_Block(unsigned char *input, int in_len, unsigned char *
 		}
 		//final add round 
 		for (j = 0; j < 4; j++)
-			key_32[j] = subkey[44 * 16 + j * 4 + 3] | (subkey[44 * 16 + j * 4 + 2] << 8) | (subkey[44 * 16 + j * 4 + 1] << 16) | (subkey[44 * 16 + j * 4 + 0] << 24);
+			key_32[j] = subkey[50 * 16 + j * 4 + 3] | (subkey[50 * 16 + j * 4 + 2] << 8) | (subkey[50 * 16 + j * 4 + 1] << 16) | (subkey[50 * 16 + j * 4 + 0] << 24);
 		AddRoundKey(state, key_32, state);
 		//trans state(32bit) to output(8bit)
 		for (i = 0; i < 4; i++)
@@ -233,14 +257,14 @@ void TANGRAM_128_128_enc_Block(unsigned char *input, int in_len, unsigned char *
 	}
 }
 
-void TANGRAM_128_128_dec_Block(unsigned char *input, int in_len, unsigned char *output, unsigned char *key, int key_len) {
+void TANGRAM_128_256_dec_Block(unsigned char *input, int in_len, unsigned char *output, unsigned char *key, int key_len) {
 	//ECB
 	uint32_t state[4], state_s[4], key_32[4];
-	unsigned char subkey[16 * 45];
+	unsigned char subkey[16 * 51];
 	int i, j;
 	int block_cnt = in_len / BLOCK_SIZE;
 	//produce subkey
-	Key_Schedule(key, 128, 0, subkey);
+	Key_Schedule(key, key_len, 0, subkey);
 	//block dec
 	for (int b = 0; b < block_cnt; b++)
 	{
@@ -255,10 +279,10 @@ void TANGRAM_128_128_dec_Block(unsigned char *input, int in_len, unsigned char *
 		}
 
 		//round function
-		for (i = 0; i < 44; i++)
+		for (i = 0; i < 50; i++)
 		{
 			for (j = 0; j < 4; j++)
-				key_32[j] = subkey[(44 - i) * 16 + j * 4 + 3] | (subkey[(44 - i) * 16 + j * 4 + 2] << 8) | (subkey[(44 - i) * 16 + j * 4 + 1] << 16) | (subkey[(44 - i) * 16 + j * 4 + 0] << 24);
+				key_32[j] = subkey[(50 - i) * 16 + j * 4 + 3] | (subkey[(50 - i) * 16 + j * 4 + 2] << 8) | (subkey[(50 - i) * 16 + j * 4 + 1] << 16) | (subkey[(50 - i) * 16 + j * 4 + 0] << 24);
 			
 			AddRoundKey(state, key_32, state);
 			
@@ -282,16 +306,16 @@ void TANGRAM_128_128_dec_Block(unsigned char *input, int in_len, unsigned char *
 		}
 	}
 }
-void TANGRAM_128_128_enc_Round(unsigned char *input, int in_len, unsigned char *output,  unsigned char *key, int key_len,int cryptoround) {
+void TANGRAM_128_256_enc_Round(unsigned char *input, int in_len, unsigned char *output,  unsigned char *key, int key_len,int cryptoround) {
 	uint32_t state[4], state_s[4], key_32[4];
-	unsigned char subkey[16 * 45];
+	unsigned char subkey[16 * 51];
 	int i, j;
 	int block_cnt = in_len / BLOCK_SIZE;
 	//round number small than 44
 	if (cryptoround > 44)
 		return -1;
 	//produce subkey
-	Key_Schedule(key, 128, 0, subkey);
+	Key_Schedule(key, key_len, 0, subkey);
 
 	for (int b = 0; b < block_cnt; b++)
 	{
@@ -332,10 +356,10 @@ void TANGRAM_128_128_enc_Round(unsigned char *input, int in_len, unsigned char *
 		}
 	}
 }
-void TANGRAM_128_128_enc_Block_CBC(unsigned char *input, int in_len, unsigned char *output, unsigned char *key, int key_len,unsigned char *iv) {
+void TANGRAM_128_256_enc_Block_CBC(unsigned char *input, int in_len, unsigned char *output, unsigned char *key, int key_len,unsigned char *iv) {
 	//CBC
 	uint32_t state[4], state_s[4], key_32[4];
-	unsigned char subkey[16 * 45];
+	unsigned char subkey[16 * 51];
 	int block_cnt = in_len / BLOCK_SIZE;
 	int i, j;
 	for(i=0;i<4;i++)
@@ -346,7 +370,7 @@ void TANGRAM_128_128_enc_Block_CBC(unsigned char *input, int in_len, unsigned ch
 	unsigned char temp[16] = { 0x00 };
 	//in first block,temp==iv
 	//produce subkey
-	Key_Schedule(key, 128, 0, subkey);
+	Key_Schedule(key, key_len, 0, subkey);
 	
 	for (int b = 0; b < block_cnt; b++)
 	{
@@ -361,7 +385,7 @@ void TANGRAM_128_128_enc_Block_CBC(unsigned char *input, int in_len, unsigned ch
 		}
 		
 		//round function
-		for (i = 0; i < 44; i++)
+		for (i = 0; i < 50; i++)
 		{
 			for (j = 0; j < 4; j++)
 				key_32[j] = subkey[i * 16 + j * 4 + 3] | (subkey[i * 16 + j * 4 + 2] << 8) | (subkey[i * 16 + j * 4 + 1] << 16) | (subkey[i * 16 + j * 4 + 0] << 24);
@@ -375,7 +399,7 @@ void TANGRAM_128_128_enc_Block_CBC(unsigned char *input, int in_len, unsigned ch
 		}
 		//final add round 
 		for (j = 0; j < 4; j++)
-			key_32[j] = subkey[44 * 16 + j * 4 + 3] | (subkey[44 * 16 + j * 4 + 2] << 8) | (subkey[44 * 16 + j * 4 + 1] << 16) | (subkey[44 * 16 + j * 4 + 0] << 24);
+			key_32[j] = subkey[50 * 16 + j * 4 + 3] | (subkey[50 * 16 + j * 4 + 2] << 8) | (subkey[50 * 16 + j * 4 + 1] << 16) | (subkey[50 * 16 + j * 4 + 0] << 24);
 		AddRoundKey(state, key_32, state);
 		//trans state(32bit) to output(8bit)
 		for (i = 0; i < 4; i++)
@@ -389,10 +413,10 @@ void TANGRAM_128_128_enc_Block_CBC(unsigned char *input, int in_len, unsigned ch
 			temp[i] = output[16 * b + i];
 	}
 }
-void TANGRAM_128_128_dec_Block_CBC(unsigned char *input, int in_len, unsigned char *output, unsigned char *key, int key_len,unsigned char *iv) {
+void TANGRAM_128_256_dec_Block_CBC(unsigned char *input, int in_len, unsigned char *output, unsigned char *key, int key_len,unsigned char *iv) {
 	//CBC
 	uint32_t state[4], state_s[4], key_32[4];
-	unsigned char subkey[16 * 45];
+	unsigned char subkey[16 * 51];
 	int block_cnt = in_len / BLOCK_SIZE;
 	int i, j;
 	for (i = 0; i < 4; i++)
@@ -403,7 +427,7 @@ void TANGRAM_128_128_dec_Block_CBC(unsigned char *input, int in_len, unsigned ch
 	unsigned char temp[16] = { 0x00 };
 	//in first block,temp==iv
 	//produce subkey
-	Key_Schedule(key, 128, 0, subkey);
+	Key_Schedule(key, key_len, 0, subkey);
 	
 	for (int b = 0; b < block_cnt; b++)
 	{
@@ -419,7 +443,7 @@ void TANGRAM_128_128_dec_Block_CBC(unsigned char *input, int in_len, unsigned ch
 		
 
 		//round function
-		for (i = 0; i < 44; i++)
+		for (i = 0; i < 50; i++)
 		{
 			for (j = 0; j < 4; j++)
 				key_32[j] = subkey[i * 16 + j * 4 + 3] | (subkey[i * 16 + j * 4 + 2] << 8) | (subkey[i * 16 + j * 4 + 1] << 16) | (subkey[i * 16 + j * 4 + 0] << 24);
@@ -433,7 +457,7 @@ void TANGRAM_128_128_dec_Block_CBC(unsigned char *input, int in_len, unsigned ch
 		}
 		//final add round 
 		for (j = 0; j < 4; j++)
-			key_32[j] = subkey[j * 4 + 3] | (subkey[j * 4 + 2] << 8) | (subkey[j * 4 + 1] << 16) | (subkey[j * 4 + 0] << 24);
+			key_32[j] = subkey[50 * 16 + j * 4 + 3] | (subkey[50 * 16 + j * 4 + 2] << 8) | (subkey[50 * 16 + j * 4 + 1] << 16) | (subkey[50 * 16 + j * 4 + 0] << 24);
 		
 		
 		AddRoundKey(state, key_32, state);
