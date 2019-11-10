@@ -43,7 +43,7 @@ int main()
 	//CBC模式解密
 	//Crypt_Dec_Block_CBC(input, in_len, output, &out_len, key, key_len);
 	//测试输出
-	/*printf("plain:\n");
+	printf("plain:\n");
 	for (j = 0; j < 32; j++)printf("%2x,", input[j]);
 	printf("\n");
 	printf("key:\n");
@@ -51,7 +51,7 @@ int main()
 	printf("\n");
 	printf("cipher\n");
 	for (j = 0; j < 32; j++)printf("%2x,", output[j]);
-	printf("\n");*/
+	printf("\n");
 	
 	getchar();
 	
