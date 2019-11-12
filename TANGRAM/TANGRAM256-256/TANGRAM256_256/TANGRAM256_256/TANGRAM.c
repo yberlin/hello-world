@@ -221,9 +221,9 @@ void TANGRAM_256_256_enc_Block(unsigned char *input, int in_len, unsigned char *
 			SubCloumn(state, state_s);
 
 			ShiftRow(state_s, state);
-			printf("\n round %d  shiftrow state \n", i);
+			/*printf("\n round %d  shiftrow state \n", i);
 			for (int k = 0; k < 4; k++)
-				printf("%llx \n", state[k]);
+				printf("%llx \n", state[k]);*/
 		}
 		//final add round 
 		//for (j = 0; j < 4; j++)
