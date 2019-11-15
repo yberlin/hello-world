@@ -1,0 +1,8 @@
+﻿  TANGRAM.c
+f:\test fold\tangram128-128 test\tangram\tangram.c(263): warning C4098: “TANGRAM_128_128_enc_Round”:“void”函数返回值
+f:\test fold\tangram128-128 test\tangram\tangram.c(313): warning C4101: “j”: 未引用的局部变量
+  TANGRAM128_128.c
+f:\test fold\tangram128-128 test\tangram\tangram128_128.c(113): warning C4033: “test_sec”必须返回值
+  正在生成代码...
+f:\test fold\tangram128-128 test\tangram\tangram128_128.c(123): warning C4715: “test_sec”: 不是所有的控件路径都返回值
+  TANGRAM.vcxproj -> F:\TEST fold\TANGRAM128-128 TEST\x64\Debug\TANGRAM.exe
