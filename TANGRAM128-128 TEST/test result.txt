@@ -10,3 +10,15 @@
 将移位拼接32bit操作改为宏定义寻址后
 加密1byte数据所需的cycle数为：237.272311
 1秒加密127.432194 Mbit
+
+在自己电脑跑
+AMD Ryzen 5 2500U with Radeon Vega Mobile Gfx 2.00GHz
+
+加密1byte数据所需的cycle数为：155.160670
+1秒加密104.022913 Mbit
+解密1byte数据所需的cycle数为：157.379876
+1秒解密101.376272 Mbit
+
+改用release
+加密1byte数据所需的cycle数为：18.245588
+1秒加密823.724223 Mbit

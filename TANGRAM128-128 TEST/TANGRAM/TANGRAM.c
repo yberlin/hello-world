@@ -105,30 +105,34 @@ void Key_Schedule(unsigned char *Seedkey, int Keylen, unsigned char Direction, u
 	uint32_t row[4], row_1[4],row_2[4];
 	if (Keylen == 128)
 	{
-		for ( i = 0; i < 4; i++)
-		{
-			row[i] = 0;
-		}
+		//for ( i = 0; i < 4; i++)
+		//{
+		//	row[i] = 0;
+		//}
 		//the first round subkey = seedkey
 		for (i = 0; i < 4; i++)
 			for (j = 0; j < 4; j++)
 			Subkey[i * 4 + j] = Seedkey[i * 4 + 3-j];
-		
-		//8bit to 32bit
-		for ( i = 0; i < 4; i++)
-		{
-			row[i] = row[i] | Seedkey[i * 4 ] | (Seedkey[i * 4 + 1] << 8) | (Seedkey[i * 4 + 2] << 16) | (Seedkey[i * 4 + 3] << 24);
-			
-		}
+		//
+		////8bit to 32bit
+		//for ( i = 0; i < 4; i++)
+		//{
+		//	row[i] = row[i] | Seedkey[i * 4 ] | (Seedkey[i * 4 + 1] << 8) | (Seedkey[i * 4 + 2] << 16) | (Seedkey[i * 4 + 3] << 24);
+		//	
+		//}
+		//input_1Block(Subkey[0], Subkey[1], Subkey[2], Subkey[3], Seedkey);
+		input_1Block(row[0], row[1], row[2], row[3], Seedkey);
 		for ( r = 0; r < 44; r++)
 		{
 			//SubCloumn
 			SubCloumn(row, row_1);
 			//Feistel
 			row_2[3] = row_1[0];
-			row_2[0] = ((row_1[0] << 7) | (row_1[0] & 0xFE000000) >> 25) ^ row_1[1];
+			//row_2[0] = ((row_1[0] << 7) | (row_1[0] & 0xFE000000) >> 25) ^ row_1[1];
+			row_2[0] = _rotl(row_1[0], 7)^row_1[1];
 			row_2[1] = row_1[2];
-			row_2[2] = ((row_1[2] << 17) | (row_1[2] & 0xFFFF8000) >> 15) ^ row_1[3];
+			row_2[2] = _rotl(row_1[2], 17) ^ row_1[3];
+			//row_2[2] = ((row_1[2] << 17) | (row_1[2] & 0xFFFF8000) >> 15) ^ row_1[3];
 			//round constant
 			row_2[0] = row_2[0] ^ RC44[r];
 			//128 key schedule
@@ -324,10 +328,10 @@ void TANGRAM_128_128_enc_Block_CBC(unsigned char *input, int in_len, unsigned ch
 	for (int b = 0; b < block_cnt; b++)
 	{
 		sub = subkey;
-		for (i = 0; i < 4; i++)
+		/*for (i = 0; i < 4; i++)
 		{
 			key_32[i] = 0;
-		}
+		}*/
 		//for (i = 0; i < 4; i++)
 		//{
 			//state[i] = (input[16 * b + i * 4]^temp[i * 4]) | ((input[16 * b + i * 4 + 1]^temp[i*4+1]) << 8) | ((input[16 * b + i * 4 + 2]^temp[i*4+2]) << 16) | ((input[16 * b + i * 4 + 3]^temp[i*4+3]) << 24);
@@ -368,6 +372,7 @@ void TANGRAM_128_128_dec_Block_CBC(unsigned char *input, int in_len, unsigned ch
 	//CBC
 	uint32_t state[4], state_s[4], key_32[4];
 	unsigned char subkey[16 * 45];
+	unsigned char *sub;
 	int block_cnt = in_len / BLOCK_SIZE;
 	int i, j;
 	for (i = 0; i < 4; i++)
@@ -382,23 +387,25 @@ void TANGRAM_128_128_dec_Block_CBC(unsigned char *input, int in_len, unsigned ch
 	
 	for (int b = 0; b < block_cnt; b++)
 	{
-		
-		for (i = 0; i < 4; i++)
+		sub = subkey + 16*RC;
+		/*for (i = 0; i < 4; i++)
 		{
 			key_32[i] = 0;
 		}
 		for (i = 0; i < 4; i++)
 		{
 			state[i] = (input[16 * b + i * 4] ^ temp[i * 4]) | ((input[16 * b + i * 4 + 1] ^ temp[i * 4 + 1]) << 8) | ((input[16 * b + i * 4 + 2] ^ temp[i * 4 + 2]) << 16) | ((input[16 * b + i * 4 + 3] ^ temp[i * 4 + 3]) << 24);
-		}
+		}*/
+		input_1Block_CBC(state[0], state[1], state[2], state[3], input, temp);
 		
 
 		//round function
 		for (i = 0; i < 44; i++)
 		{
-			for (j = 0; j < 4; j++)
-				key_32[j] = subkey[i * 16 + j * 4 + 3] | (subkey[i * 16 + j * 4 + 2] << 8) | (subkey[i * 16 + j * 4 + 1] << 16) | (subkey[i * 16 + j * 4 + 0] << 24);
-			
+			/*for (j = 0; j < 4; j++)
+				key_32[j] = subkey[i * 16 + j * 4 + 3] | (subkey[i * 16 + j * 4 + 2] << 8) | (subkey[i * 16 + j * 4 + 1] << 16) | (subkey[i * 16 + j * 4 + 0] << 24);*/
+			input_1Block(key_32[0], key_32[1], key_32[2], key_32[3], sub);
+			sub = sub - 16;
 			AddRoundKey(state, key_32, state);
 			
 			invShiftRow(state, state_s);
@@ -407,10 +414,10 @@ void TANGRAM_128_128_dec_Block_CBC(unsigned char *input, int in_len, unsigned ch
 			
 		}
 		//final add round 
-		for (j = 0; j < 4; j++)
+		/*for (j = 0; j < 4; j++)
 			key_32[j] = subkey[j * 4 + 3] | (subkey[j * 4 + 2] << 8) | (subkey[j * 4 + 1] << 16) | (subkey[j * 4 + 0] << 24);
-		
-		
+		*/
+		input_1Block(key_32[0], key_32[1], key_32[2], key_32[3], sub);
 		AddRoundKey(state, key_32, state);
 		
 		//trans state(32bit) to output(8bit)

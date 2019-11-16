@@ -1,0 +1,11 @@
+﻿  TANGRAM128_128.c
+d:\github\hello-world\tangram128-128 test\tangram\tangram128_128.c(113): warning C4033: “test_sec”必须返回值
+  TANGRAM.c
+d:\github\hello-world\tangram128-128 test\tangram\tangram.c(267): warning C4098: “TANGRAM_128_128_enc_Round”:“void”函数返回值
+d:\github\hello-world\tangram128-128 test\tangram\tangram.c(317): warning C4101: “j”: 未引用的局部变量
+d:\github\hello-world\tangram128-128 test\tangram\tangram.c(377): warning C4101: “j”: 未引用的局部变量
+  正在生成代码
+d:\github\hello-world\tangram128-128 test\tangram\tangram128_128.c(123): warning C4715: “test_sec”: 不是所有的控件路径都返回值
+  All 16 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  已完成代码的生成
+  TANGRAM.vcxproj -> D:\GITHUB\hello-world\TANGRAM128-128 TEST\x64\Release\TANGRAM.exe

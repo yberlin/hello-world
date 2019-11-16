@@ -1,0 +1,3 @@
+﻿  TANGRAM.c
+d:\github\hello-world\tangram128-256 test\tangram128_256\tangram.c(323): warning C4098: “TANGRAM_128_256_enc_Round”:“void”函数返回值
+  TANGRAM128_256.vcxproj -> D:\GITHUB\hello-world\TANGRAM128-256 TEST\x64\Debug\TANGRAM128_256.exe
