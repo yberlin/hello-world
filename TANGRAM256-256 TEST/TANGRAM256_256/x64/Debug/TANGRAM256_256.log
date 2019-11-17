@@ -1,0 +1,4 @@
+﻿  TANGRAM256_256.c
+d:\github\hello-world\tangram256-256 test\tangram256_256\tangram256_256.c(60): warning C4033: “test_sec”必须返回值
+d:\github\hello-world\tangram256-256 test\tangram256_256\tangram256_256.c(70): warning C4715: “test_sec”: 不是所有的控件路径都返回值
+  TANGRAM256_256.vcxproj -> D:\GITHUB\hello-world\TANGRAM256-256 TEST\x64\Debug\TANGRAM256_256.exe

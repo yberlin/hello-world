@@ -1,3 +1,7 @@
 ﻿  TANGRAM.c
 d:\github\hello-world\tangram128-256 test\tangram128_256\tangram.c(323): warning C4098: “TANGRAM_128_256_enc_Round”:“void”函数返回值
+  TANGRAM128_256.c
+d:\github\hello-world\tangram128-256 test\tangram128_256\tangram128_256.c(60): warning C4033: “test_sec”必须返回值
+  正在生成代码...
+d:\github\hello-world\tangram128-256 test\tangram128_256\tangram128_256.c(70): warning C4715: “test_sec”: 不是所有的控件路径都返回值
   TANGRAM128_256.vcxproj -> D:\GITHUB\hello-world\TANGRAM128-256 TEST\x64\Debug\TANGRAM128_256.exe

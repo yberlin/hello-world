@@ -20,5 +20,7 @@ AMD Ryzen 5 2500U with Radeon Vega Mobile Gfx 2.00GHz
 1秒解密101.376272 Mbit
 
 改用release
-加密1byte数据所需的cycle数为：18.245588
-1秒加密823.724223 Mbit
+加密1byte数据所需的cycle数为：24.580097
+1秒加密654.216534 Mbit
+解密1byte数据所需的cycle数为：25.676590
+1秒解密678.356390 Mbit
