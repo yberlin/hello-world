@@ -16,6 +16,13 @@
 	x2 = word64_in(ip, 2);                                                                                                    \
 	x3 = word64_in(ip, 3);                                                                                                    \
 }
+#define input_1Block_CBC(x0, x1, x2, x3, ip, pre)                                                                              \
+{                                                                                                                             \
+	x0 = word32_in(ip, 0)^word32_in(pre, 0);                                                                                   \
+	x1 = word32_in(ip, 1)^word32_in(pre, 1);                                                                                   \
+	x2 = word32_in(ip, 2)^word32_in(pre, 2);                                                                                   \
+	x3 = word32_in(ip, 3)^word32_in(pre, 3);                                                                                   \
+}
 /** @brief  ‰≥ˆ¬÷√‹‘ø */
 #define key_out(w0, w1, w2, w3, n)                                     \
 {                                                                      \
