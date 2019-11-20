@@ -1,0 +1,146 @@
+NTT notes:
+
+NEWHOPE:
+
+O0 optimization level:
+
+Here, the j+distance is calculated as such and it is done everytime it is done in the code...So it is possible to fault
+as many times as possible actually.
+
+For the other attack, it doesnt work... Because of rearranging of the registers...
+
+O1 optimization level:
+
+Skipping the store instruction retains the previous value for distance. But, this is not supposed to be done
+in the first round as the same memory location has a random value. Thus, the first iteration, the store value is not supposed to be
+faulted. Then, the left shift instruction also has to be faulted so that the value is always 2.
+
+Instructions:
+
+0x8000cca <ntt+208>      movs   r1, #1                                                                                                                                           │
+│0x8000ccc <ntt+210>     ldr    r2, [sp, #12]                                                                                                                                    │
+│0x8000cce <ntt+212>     lsl.w  r3, r1, r2                                                                                                                                      │
+│0x8000cd2 <ntt+216>     str    r3, [sp, #8]        ---------- (skipping of store)                                                                                                                          │
+│0x8000cd4 <ntt+218>     cmp    r3, #0                                                                                                                                           │
+│0x8000cd6 <ntt+220>     ble.n  0x8000c4c <ntt+82>                                                                                                                               │
+│0x8000cd8 <ntt+222>     mov.w  r8, #2                                                                                                                                           │
+│0x8000cdc <ntt+226>     lsl.w  r8, r8, r2          ---------- (skipping of left shift)                                                                                                                         │
+│0x8000ce0 <ntt+230>     add.w  r5, r11, r8
+
+Could see that in the odd stage, you can skip the left shift instruction so the register retains the previous value.
+Then, the derived distance value also depends only on this value. Thus, we can see that one fault is sufficient.
+
+Instructions:
+
+│0x8000c4c <ntt+82>      ldr    r3, [sp, #8]                                                                                                                                     │
+│0x8000c4e <ntt+84>      lsls   r3, r3, #1        ------------ (skipping of left shift)                                                                                                                            │
+│0x8000c50 <ntt+86>      str    r3, [sp, #8]                                                                                                                                     │
+│0x8000c52 <ntt+88>      cmp    r3, #0                                                                                                                                           │
+│0x8000c54 <ntt+90>      ble.n  0x8000cc0 <ntt+198>                                                                                                                              │
+│0x8000c56 <ntt+92>      mov.w  r8, r3, lsl #1                                                                                                                                   │
+│0x8000c5a <ntt+96>      add.w  r5, r11, r8
+
+Thus, we can see that the distance value can be maintained to the same value using these faults. (2 faults in the
+even stage and 1 fault in the odd stage)
+
+O2 optimization level:
+
+Even stage:
+
+│0x8000c7e <ntt+18>      movs   r4, #2                                                                                                                                           │
+│0x8000c80 <ntt+20>      movs   r2, #1                                                                                                                                           │
+│0x8000c82 <ntt+22>      lsls   r4, r3        ----- skip the shift of left shift thus retaining the value of 2.                                                                                                                                   │
+│0x8000c84 <ntt+24>      lsl.w  r3, r2, r3                                                                                                                                       │
+>│0x8000c88 <ntt+28>      add.w  r7, r8, r4
+ │0x8000c8c <ntt+32>      str    r3, [sp, #8]  ---- Skip the store instruction so that it retains the original value of distance.
+Here, we can simply
+
+Odd stage:
+
+│0x8000cde <ntt+114>     mov    r8, r7               ----Here also the derived distance value will be 2 only since it depends on the previous value.                                                                                                                            │
+│0x8000ce0 <ntt+116>     lsls   r6, r3, #2           ---- This step has to be skipped.                                                                                                                            │
+B+>│0x8000ce2 <ntt+118>     lsls   r3, r3, #1        ----Here, the actual distance value also only depends on the previous stored value....                                                                                                                              │
+│0x8000ce4 <ntt+120>     add.w  r11, r7, r6
+
+So, in the even stage, we skip a shift operation and skip the store operation and in the odd stage.
+In this stage, we have to fault both the left shift instructions.
+
+03 optimization level:
+
+Even stage:
+
+│0x8001094 <ntt+16>      movs   r1, #2                                                                                                                                           │
+B+ │0x8001096 <ntt+18>      movs   r2, #1                                                                                                                                           │
+│0x8001098 <ntt+20>      lsl.w  r4, r1, r3    ----- The derived distance value is the problem here...it is put in a separate register...                                                                                                                                   │
+│0x800109c <ntt+24>      lsl.w  r3, r2, r3                                                                                                                                       │
+│0x80010a0 <ntt+28>      add.w  r5, r10, r4                                                                                                                                      │
+│0x80010a4 <ntt+32>      str    r3, [sp, #8] ----- Fault the store of actual distance value...
+
+You can fault the store of distance value in sp,8.
+
+Odd stage:
+
+│0x80010ea <ntt+102>     ldr    r3, [sp, #8]                                                                                                                                     │
+│0x80010ec <ntt+104>     add.w  r8, r8, #1                                                                                                                                       │
+│0x80010f0 <ntt+108>     cmp    r3, r8                                                                                                                                           │
+│0x80010f2 <ntt+110>     bne.n  0x80010b8 <ntt+52>                                                                                                                               │
+│0x80010f4 <ntt+112>     mov    r2, r3                                                                                                                                           │
+B+>│0x80010f6 <ntt+114>     lsls   r3, r3, #1     ------- Has the previous value, but also skip this...                                                                                                                                  │
+│0x80010f8 <ntt+116>     mov    r10, r5                                                                                                                                          │
+│0x80010fa <ntt+118>     subs   r3, #1                                                                                                                                           │
+│0x80010fc <ntt+120>     lsls   r5, r2, #2      ------- Perform this step...no problem....                                                                                                                                │
+│0x80010fe <ntt+122>     str    r3, [sp, #8]                                                                                                                                     │
+│0x8001100 <ntt+124>     add.w  r11, r10, r5
+
+In odd stage, we just have to fault the first lsls instruction....The second one no need to fault...
+
+KYBER:
+
+O1 optimization:
+
+NTT:
+
+│0x8000fd0 <ntt+164>     ldr    r2, [sp, #12]                                                                                                                                    │
+│0x8000fd2 <ntt+166>     lsls   r3, r2                                                                                                                                           │
+│0x8000fd4 <ntt+168>     str    r3, [sp, #4]      -------          Skip the store...                                                                                                                     │
+│0x8000fd6 <ntt+170>     ldr    r3, [pc, #32]   ; (0x8000ff8 <ntt+204>)                                                                                                          │
+│0x8000fd8 <ntt+172>     ldr    r2, [sp, #0]
+
+INTT:
+
+│0x8001078 <invntt+124>  movs   r1, #1                                                                                                                                           │
+│0x800107a <invntt+126>  ldr    r3, [sp, #12]                                                                                                                                    │
+│0x800107c <invntt+128>  lsl.w  r2, r1, r3                                                                                                                                       │
+│0x8001080 <invntt+132>  str    r2, [sp, #8]   ------- (Skip the store instruction)                                                                                                                               │
+│0x8001082 <invntt+134>  cmp    r2, #0                                                                                                                                           │
+│0x8001084 <invntt+136>  ble.n  0x800106e <invntt+114>                                                                                                                           │
+│0x8001086 <invntt+138>  mov.w  r10, #2                                                                                                                                          │
+│0x800108a <invntt+142>  lsl.w  r10, r10, r3    ;    ------- (Skip the left shift instruction)                                                                                                                              │
+│0x800108e <invntt+146>  add.w  r6, r11, r10                                                                                                                                     │
+>│0x8001092 <invntt+150>  movs   r2, #0
+
+Seems like we just have to fault the store instruction, as all the values after are derived from that one....
+For NTT, just faulting the store instruction is sufficient. But for INTT, the actual distance values and
+derived distance values are calculated differently. Thus, we have to fault twice. Once, the skipping of the
+shift instruction and the other, the skipping of the left shift instruction.
+
+O2 optimization:
+
+NTT:
+
+│0x8000f2e <ntt+34>      ldr    r3, [sp, #20]                                                                                                                                    │
+│0x8000f30 <ntt+36>      movs   r1, #1                                                                                                                                           │
+│0x8000f32 <ntt+38>      lsl.w  r2, r1, r3                                                                                                                                       │
+│0x8000f36 <ntt+42>      str    r2, [sp, #8]        ----- Skip the store                                                                                                                             │
+│0x8000f38 <ntt+44>      and.w  r7, r3, r1                                                                                                                                       │
+>│0x8000f3c <ntt+48>      movs   r2, #0                                                                                                                                           │
+│0x8000f3e <ntt+50>      movw   r6, #30724      ; 0x7804
+
+INTT:
+
+Not possible. Same problem as in O3 optimization in NEWHOPE.
+
+O3 optimization:
+
+Not possible both in NTT and in INTT. Distance value is directly being used without getting stored anywhere...
+Thus, it is not possible to fault the operation to get desired value.
