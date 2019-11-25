@@ -315,11 +315,11 @@ void TANGRAM_128_128_enc_Block_CBC(unsigned char *input, int in_len, unsigned ch
 	
 	int block_cnt = in_len / BLOCK_SIZE;
 	int i, j;
-	for(i=0;i<4;i++)
-		state[i] = 0;
+	//for(i=0;i<4;i++)
+		//state[i] = 0;
 	//xor iv
-	for (i = 0; i < 16; i++)
-		input[i] = input[i] ^ iv[i];
+	/*for (i = 0; i < 16; i++)
+		input[i] = input[i] ^ iv[i];*/
 	unsigned char temp[16] = { 0x00 };
 	//in first block,temp==iv
 	//produce subkey

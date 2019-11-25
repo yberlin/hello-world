@@ -78,8 +78,8 @@ uint64_t test_cycle()
 	}
 
 	start = __rdtsc();
-	//Crypt_Enc_Block_CBC(pa, 16 * 16, ca, &out_len, key, 128);
-	Crypt_Dec_Block_CBC(pa, 16 * 16, ca, &out_len, key, 128);
+	Crypt_Enc_Block_CBC(pa, 16*16, ca, &out_len, key, 128);
+	//Crypt_Dec_Block_CBC(pa, 16 * 16 * 8, ca, &out_len, key, 128);
 	end = __rdtsc();
 	result = end - start;
 
@@ -114,7 +114,7 @@ double test_sec()
 	}
 
 	QueryPerformanceCounter(&nBeginTime);
-	Crypt_Enc_Block_CBC(pa, 16 * 16, ca, &out_len, key, 128);
+	Crypt_Enc_Block_CBC(pa, 16*16, ca, &out_len, key, 128);
 	//Crypt_Dec_Block_CBC(pa, 16 * 16, ca, &out_len, key, 128);
 	QueryPerformanceCounter(&nEndTime);
 	time = (double)(nEndTime.QuadPart - nBeginTime.QuadPart) / (double)nFreq.QuadPart;  //单位s
@@ -133,7 +133,7 @@ int main()
 	{
 		sum += test_cycle();
 	}
-	cpb = (double)sum / ((double)(16) * 16 * 100000);
+	cpb = (double)sum / ((double)(16) *2 * 100000);
 	printf("加密1byte数据所需的cycle数为：%lf\n", cpb);
 	//printf("解密1byte数据所需的cycle数为：%lf\n", cpb);
 
@@ -146,7 +146,7 @@ int main()
 	{
 		sum_mbit += test_sec();
 	}
-	mbps = ((double)(16) * 16 * 8 * 100000 / 1000000) / (double)sum_mbit;
+	mbps = ((double)(16) *2  * 8 * 100000 / 1000000) / (double)sum_mbit;
 	printf("1秒加密%lf Mbit\n", mbps);
 	//printf("1秒解密%lf Mbit\n", mbps);
 	getchar();
