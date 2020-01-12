@@ -87,7 +87,7 @@ asm_ntt512:
     ldr tmp2, [p, #4]
     ldr tmp3, [p, #8]
     ldr c_3,  [p, #12]
-    #load tmp1~3 from p,p+4,p+8,a0,a1,a2?
+    #load tmp1~3 from p,p+4,p+8->means load a0,a1,a2?
     ldr root12, [root, loop, lsl#3]
     #load root12, from root, offset=loop+8
 
